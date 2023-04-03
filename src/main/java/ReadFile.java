@@ -4,10 +4,12 @@ import java.util.*;
 public class ReadFile {
     private String filename;
     private ArrayList<Integer> routerPort;
+    private HashMap<Integer,Integer> routerPorts;
 
     public ReadFile(String filename){
         this.filename = filename;
         routerPort = new ArrayList<>();
+        routerPorts= new HashMap<Integer,Integer>();
     }
 
     public void printFile(){
@@ -38,14 +40,20 @@ public class ReadFile {
         try{
             File myFile = new File(filename);
             Scanner myReader = new Scanner(myFile);
-
+            System.out.println("");
             while(myReader.hasNextLine()){
                 String data = myReader.nextLine();
 //                System.out.println(data);
+                int port = Integer.parseInt(data.substring(0,5));
+                System.out.println("Main Port " + port);
+                String[] split = data.substring(6).split("[ -]+");
+                for(int i = 0;i<split.length;i++){
+                    if(i%2 ==0){
+                        System.out.println("Port: " + split[i]);
+                    }else{
+                        System.out.println("Distance: " + split[i]);
+                    }
 
-                String[] split = data.split("[ -]+");
-                for(String s:split){
-                    System.out.println(s);
                 }
                 System.out.println("");
 
@@ -62,10 +70,13 @@ public class ReadFile {
         try{
             File myFile = new File(filename);
             Scanner myReader = new Scanner(myFile);
+            int indx = 0;
             while(myReader.hasNextLine()){
                 String data = myReader.nextLine();
                 String[] split = data.split(" ");
                 routerPort.add(Integer.parseInt(split[0]));
+                routerPorts.put(Integer.parseInt(split[0]),indx);
+                indx++;
 //                System.out.println("");
             }
             myReader.close();
