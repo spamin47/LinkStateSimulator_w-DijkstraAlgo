@@ -7,5 +7,6 @@ public class main {
         rf.storeRouterPorts();
         rf.printRouterPortsStored();
         rf.createGraph();
+        rf.printGraph();
     }
 }
