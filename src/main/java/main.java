@@ -4,8 +4,7 @@ import java.util.Scanner;
 
 public class main {
     public static void main(String[] args){
-        String filename = "src/main/java/test_topology_file.txt";
-        System.out.println("hello world");
+        String filename = "D:/projects/Java/LinkStateSimulator/src/main/java/test_topology_file.txt";
         ReadFile rf = new ReadFile("src/main/java/test_topology_file.txt");
 //        rf.printFile();
 //        rf.storeRouterPorts();
@@ -20,10 +19,10 @@ public class main {
                 String data = myReader.nextLine();
 //                System.out.println(data);
                 int port = Integer.parseInt(data.substring(0,5));
-                System.out.println("Main Port " + port);
+//                System.out.println("Main Port " + port);
                 String[] split = data.substring(6).split(" ");
                 routers.add(new MockRouter(port,split));
-                System.out.println("");
+//                System.out.println("");
 
             }
             myReader.close();
@@ -35,6 +34,8 @@ public class main {
 
         for(MockRouter r:routers){
             System.out.println(r);
+            Thread router = new Thread(r);
+            router.start();
         }
 
     }
