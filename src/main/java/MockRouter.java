@@ -1,8 +1,11 @@
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -20,7 +23,7 @@ public class MockRouter
         this.portNumber  = portNumber;
         this.adjacents   = adjacents;
 
-        
+        SocketThread.start();
     }   
     
     Thread SocketThread = new Thread(new Runnable() {
@@ -28,36 +31,41 @@ public class MockRouter
         {
             try 
             {
-                System.out.println("running thread for port:" + portNumber);
                 ServerSocket    server     = new ServerSocket(portNumber);
                 boolean         isRunning  = true;
 
                 while(isRunning)
                 {
-                    Socket              sender  = server.accept();
+                    System.out.println("running thread for port:" + portNumber);
+                    Socket              socket  = server.accept();
                     System.out.println("client connected to server port " + portNumber);
-                    DataInputStream     in      = new DataInputStream(new BufferedInputStream(sender.getInputStream()));
-                    DataOutputStream    out     = new DataOutputStream(new BufferedOutputStream(sender.getOutputStream()));
-                    String              line    = in.readUTF();
-    
+                    // DataInputStream     in      = new DataInputStream(new BufferedInputStream(sender.getInputStream()));
+                    // DataOutputStream    out     = new DataOutputStream(new BufferedOutputStream(sender.getOutputStream()));
+                    // String              line    = in.readUTF();
+                    InputStreamReader in = new InputStreamReader(socket.getInputStream());
+                    BufferedReader br = new BufferedReader(in);
+                    PrintStream out = new PrintStream(socket.getOutputStream());
+                    String line = br.readLine();
+
                     if(line.charAt(0) == 'l')
                     {
-                        out.writeUTF("ACK\n");
+                        out.println("ACK\n");
                     }
                     else if (line.equals("h\n"))
                     {
                         // need to implement link state message history, routing table
-                        out.writeUTF("history\n");
+                        out.println("history\n");
                     }
                     else if (line.equals("s\n"))
                     {
-                        out.writeUTF("STOPPING\n");
+                        out.println("STOPPING\n");
                         isRunning = false;
                     }
 
                     out.close();
+                    br.close();
                     in.close();
-                    sender.close();
+                    socket.close();
                 }
 
                 server.close();

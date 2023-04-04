@@ -7,9 +7,12 @@ public class client {
         System.out.println("Enter the port to connect to:");
         BufferedReader keyboard = new BufferedReader(new InputStreamReader(System.in));
         Socket s = new Socket("localhost",Integer.parseInt(keyboard.readLine()));
+        System.out.println("connected to server");
 
 //        BufferedReader keyboard = new BufferedReader(new InputStreamReader(System.in));
         PrintWriter pr = new PrintWriter(s.getOutputStream(),true);
         pr.println(keyboard.readLine());
+        
+        s.close();
     }
 }
