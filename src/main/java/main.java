@@ -11,6 +11,8 @@ public class main {
 //        rf.printRouterPortsStored();
 //        rf.createGraph();
 //        rf.printGraph();
+
+        //instantiate
         ArrayList<MockRouter> routers = new ArrayList<>();
         try{
             File myFile = new File(filename);

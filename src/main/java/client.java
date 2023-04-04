@@ -12,7 +12,11 @@ public class client {
 //        BufferedReader keyboard = new BufferedReader(new InputStreamReader(System.in));
         PrintWriter pr = new PrintWriter(s.getOutputStream(),true);
         pr.println(keyboard.readLine());
-        
+
+        InputStreamReader in = new InputStreamReader(s.getInputStream());
+        BufferedReader bf = new BufferedReader(in);
+        System.out.println("Server: " + bf.readLine());
+
         s.close();
     }
 }
