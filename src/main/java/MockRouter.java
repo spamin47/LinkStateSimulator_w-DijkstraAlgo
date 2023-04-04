@@ -64,8 +64,45 @@ public class MockRouter{
                 }
             }
         });
+
+        Thread RoutingThread = new Thread(new Runnable() {
+            public void run()
+            {
+                try{
+                    for(String rd: adjacents){
+                        String split[] = rd.split("-");
+                        String routerPort = split[0];
+                        String distance = split[1];
+                        System.out.println("Port: "+portNumber + "'s neighbor: " + "Port:"+routerPort + " Distance: " + distance);
+                        System.out.println("Enter the port to connect to:");
+                        BufferedReader keyboard = new BufferedReader(new InputStreamReader(System.in));
+                        Socket s = new Socket(portNumber+"",Integer.parseInt(keyboard.readLine()));
+                        PrintWriter pr = new PrintWriter(s.getOutputStream(),true);
+                        pr.println(keyboard.readLine());
+
+                    }
+                }catch(IOException e){
+                    e.printStackTrace();
+                }
+
+
+//            System.out.println("test");
+//            try {
+//                System.out.println("Enter the port to connect to:");
+//                BufferedReader keyboard = new BufferedReader(new InputStreamReader(System.in));
+//                Socket s = new Socket(portNumber+"",Integer.parseInt(keyboard.readLine()));
+//                PrintWriter pr = new PrintWriter(s.getOutputStream(),true);
+//                pr.println(keyboard.readLine());
+//            } catch (IOException e) {
+//                throw new RuntimeException(e);
+//            }
+
+            }
+        });
+
         System.out.println("Starting thread");
         SocketThread.start();
+        RoutingThread.start();
     }
 
 //    @Override
@@ -87,24 +124,7 @@ public class MockRouter{
 //        }
 //
 //    }
-    Thread RoutingThread = new Thread(new Runnable() {
-        public void run()
-        {
 
-
-            System.out.println("test");
-            try {
-                System.out.println("Enter the port to connect to:");
-                BufferedReader keyboard = new BufferedReader(new InputStreamReader(System.in));
-                Socket s = new Socket(portNumber+"",Integer.parseInt(keyboard.readLine()));
-                PrintWriter pr = new PrintWriter(s.getOutputStream(),true);
-                pr.println(keyboard.readLine());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-
-        }
-    });
 
     public String toString(){
         String adj = "";
