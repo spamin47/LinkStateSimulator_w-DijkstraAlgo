@@ -29,6 +29,8 @@ public class MockRouter implements Runnable{
             String str = bf.readLine();
             System.out.println("client: " + str);
 
+
+            ss.close(); //close after receiving message from client
         } catch (IOException e) {
             e.printStackTrace();
         }
