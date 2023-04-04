@@ -5,6 +5,7 @@ public class ReadFile {
     private String filename;
     private ArrayList<Integer> routerPort;
     private HashMap<Integer,Integer> routerPorts;
+    private int weightedGraph[][];
 
     public ReadFile(String filename){
         this.filename = filename;
@@ -47,21 +48,20 @@ public class ReadFile {
                 int port = Integer.parseInt(data.substring(0,5));
                 System.out.println("Main Port " + port);
                 String[] split = data.substring(6).split("[ -]+");
-                for(int i = 0;i<split.length;i++){
-                    if(i%2 ==0){
-                        System.out.println("Port: " + split[i]);
-                    }else{
-                        System.out.println("Distance: " + split[i]);
-                    }
-
+                for(int i = 0;i<split.length;i+=2){
+                    System.out.println("Port: " + split[i]);
+                    System.out.println("Distance: " + split[i+1]);
+                    graph[routerPorts.get(port)][routerPorts.get(Integer.parseInt(split[i]))] = Integer.parseInt(split[i+1]);
                 }
                 System.out.println("");
 
             }
+            weightedGraph = graph;
             myReader.close();
         }catch(Exception e){
             System.out.println("error occurred");
             e.printStackTrace();
+            return;
         }
     }
 
@@ -93,5 +93,14 @@ public class ReadFile {
         for(int i = 0; i<len;i++){
             System.out.println(routerPort.get(i));
         }
+    }
+    public void printGraph(){
+        for(int r = 0;r<weightedGraph.length;r++){
+            for(int c = 0;c<weightedGraph[0].length;c++){
+                System.out.print(weightedGraph[r][c] + " ");
+            }
+            System.out.println("");
+        }
+        System.out.println("");
     }
 }

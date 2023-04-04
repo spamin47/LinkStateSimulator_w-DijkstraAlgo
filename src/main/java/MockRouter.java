@@ -7,6 +7,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 
+
 public class MockRouter 
 {
     private int portNumber;
@@ -19,7 +20,7 @@ public class MockRouter
         this.portNumber  = portNumber;
         this.adjacents   = adjacents;
 
-
+        
     }   
     
     Thread SocketThread = new Thread(new Runnable() {
@@ -27,12 +28,14 @@ public class MockRouter
         {
             try 
             {
+                System.out.println("running thread for port:" + portNumber);
                 ServerSocket    server     = new ServerSocket(portNumber);
                 boolean         isRunning  = true;
 
                 while(isRunning)
                 {
                     Socket              sender  = server.accept();
+                    System.out.println("client connected to server port " + portNumber);
                     DataInputStream     in      = new DataInputStream(new BufferedInputStream(sender.getInputStream()));
                     DataOutputStream    out     = new DataOutputStream(new BufferedOutputStream(sender.getOutputStream()));
                     String              line    = in.readUTF();
@@ -77,4 +80,12 @@ public class MockRouter
         {
         }
     });
+
+    public String toString(){
+        String adj = "";
+        for(String s: adjacents){
+                adj+=s + " ";
+        }
+        return "Port: " + portNumber + " Adjacents: " + adj;
+    }
 }
