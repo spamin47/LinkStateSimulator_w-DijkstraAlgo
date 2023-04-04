@@ -1,15 +1,10 @@
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
 
 public class MockRouter{
     private int portNumber;
@@ -151,13 +146,17 @@ public class MockRouter{
                     String split[] = rd.split("-");
                     String routerPort = split[0];
                     String distance = split[1];
-                    System.out.println("Port: "+portNumber + "'s neighbor: " + "Port:"+routerPort + " Distance: " + distance);
-                    System.out.println("Enter the port to connect to:");
-                    BufferedReader keyboard = new BufferedReader(new InputStreamReader(System.in));
-                    Socket s = new Socket(portNumber+"",Integer.parseInt(keyboard.readLine()));
-                    PrintWriter pr = new PrintWriter(s.getOutputStream(),true);
-                    pr.println(keyboard.readLine());
+                    System.out.println("Port: "+ portNumber + "'s neighbor: " + "Port:"+routerPort + " Distance: " + distance);
+                    // System.out.println("Enter the port to connect to:");
+                    Socket s = new Socket("localhost", Integer.parseInt(routerPort));
+                    PrintStream out = new PrintStream(s.getOutputStream());
 
+                    out.println("sending message from: " + portNumber);
+                    // BufferedReader keyboard = new BufferedReader(new InputStreamReader(System.in));
+                    // Socket s = new Socket(portNumber+"",Integer.parseInt(keyboard.readLine()));
+                    // PrintWriter pr = new PrintWriter(s.getOutputStream(),true);
+                    // pr.println(keyboard.readLine());
+                    s.close();
                 }
             }catch(IOException e){
                     e.printStackTrace();
