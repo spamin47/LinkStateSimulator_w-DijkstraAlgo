@@ -30,6 +30,7 @@ public class MockRouter{
                         String line = bf.readLine();
 
                         System.out.println("Port: " + portNumber + " from client(" + sender.getPort()+": "+line);
+                        output.writeUTF("Port(" + portNumber+"): I received " + line);
                         if(line.charAt(0) == 'l')
                         {
                             output.writeUTF("ACK\n");
