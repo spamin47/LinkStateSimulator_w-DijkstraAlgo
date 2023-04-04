@@ -4,13 +4,15 @@ import java.util.Scanner;
 
 public class main {
     public static void main(String[] args){
-        String filename = "D:/projects/Java/LinkStateSimulator/src/main/java/test_topology_file.txt";
+        String filename = "E:\\Projects\\Java\\CS158 - computer network\\LinkStateSimulator_w-DijkstraAlgo\\src\\main\\java\\test_topology_file.txt";
         ReadFile rf = new ReadFile("src/main/java/test_topology_file.txt");
 //        rf.printFile();
 //        rf.storeRouterPorts();
 //        rf.printRouterPortsStored();
 //        rf.createGraph();
 //        rf.printGraph();
+
+        //instantiate
         ArrayList<MockRouter> routers = new ArrayList<>();
         try{
             File myFile = new File(filename);
@@ -32,11 +34,11 @@ public class main {
             return;
         }
 
-        for(MockRouter r:routers){
-            System.out.println(r);
-            Thread router = new Thread(r);
-            router.start();
-        }
+//        for(MockRouter r:routers){
+//            System.out.println(r);
+//            Thread router = new Thread(r);
+//            router.start();
+//        }
 
     }
 }
