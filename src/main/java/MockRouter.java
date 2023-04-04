@@ -47,7 +47,7 @@ public class MockRouter{
                     PrintStream out = new PrintStream(socket.getOutputStream());
                     String line = br.readLine();
 
-                    System.out.println("Port: " + portNumber + " from client(" + sender.getPort()+": "+line);
+                    System.out.println("Port: " + portNumber + " from client(" + socket.getPort()+": "+line);
                     out.println("Port(" + portNumber+"): I received " + line);
 
                     if(line.charAt(0) == 'l')
