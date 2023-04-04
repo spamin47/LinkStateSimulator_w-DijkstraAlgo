@@ -5,13 +5,14 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 
 public class MockRouter 
 {
     private int portNumber;
     private String[] adjacents;
-    // history structure
-    // routing table
+    // history
+    // routing table 
     
     public MockRouter(int portNumber, String[] adjacents)
     {
@@ -32,27 +33,27 @@ public class MockRouter
                 while(isRunning)
                 {
                     Socket              sender  = server.accept();
-                    DataInputStream     input   = new DataInputStream(new BufferedInputStream(sender.getInputStream()));
-                    DataOutputStream    output  = new DataOutputStream(new BufferedOutputStream(sender.getOutputStream()));
-                    String              line    = input.readUTF();
+                    DataInputStream     in      = new DataInputStream(new BufferedInputStream(sender.getInputStream()));
+                    DataOutputStream    out     = new DataOutputStream(new BufferedOutputStream(sender.getOutputStream()));
+                    String              line    = in.readUTF();
     
                     if(line.charAt(0) == 'l')
                     {
-                        output.writeUTF("ACK\n");
+                        out.writeUTF("ACK\n");
                     }
                     else if (line.equals("h\n"))
                     {
                         // need to implement link state message history, routing table
-                        output.writeUTF("history\n");
+                        out.writeUTF("history\n");
                     }
                     else if (line.equals("s\n"))
                     {
-                        output.writeUTF("STOPPING\n");
+                        out.writeUTF("STOPPING\n");
                         isRunning = false;
                     }
 
-                    output.close();
-                    input.close();
+                    out.close();
+                    in.close();
                     sender.close();
                 }
 
