@@ -2,16 +2,18 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.TreeSet;
 import java.util.random.*;
 
 public class MockRouter{
     private int portNumber;
     private String[] adjacents;
+    private ConcurrentHashMap<Integer, String> messages;
+    private ArrayList<String> history;
     public boolean isRunning = true;
     // history
     // routing table
@@ -22,6 +24,7 @@ public class MockRouter{
     {
         this.portNumber  = portNumber;
         this.adjacents   = adjacents;
+        this.messages    = new ConcurrentHashMap<>();
         routersDiscovered = new TreeSet<>(); //For storing newly discovered routers
         for(String r:adjacents){
             String[] split = r.split("-");
@@ -40,32 +43,56 @@ public class MockRouter{
             try 
             {
                 ServerSocket    server     = new ServerSocket(portNumber);
-
-
                 while(isRunning)
                 {
 //                    System.out.println("port:" + portNumber + " waiting for request.");
                     Socket              socket  = server.accept();
-                    // DataInputStream     in      = new DataInputStream(new BufferedInputStream(sender.getInputStream()));
-                    // DataOutputStream    out     = new DataOutputStream(new BufferedOutputStream(sender.getOutputStream()));
-                    // String              line    = in.readUTF();
                     InputStreamReader in = new InputStreamReader(socket.getInputStream());
                     BufferedReader br = new BufferedReader(in);
-                    PrintStream out = new PrintStream(socket.getOutputStream());
                     String line = br.readLine();
+                    PrintStream out = new PrintStream(socket.getOutputStream());
 
-                    System.out.println("Port:" + portNumber + " from client(" + socket.getPort()+"): "+line);
-
-                    if(line.charAt(0) == 'l')
+                    System.out.println("Port:" + portNumber + " from client(" + socket.getPort()+"): "+ line);
+                    if(line == null)
                     {
+                        // do nothing
+                        // we should never get null messages, but just in case
+                    }
+                    else if(line.charAt(0) == 'l')
+                    {
+                        String split[] = line.split("\\s+");
+                        int senderPort = Integer.parseInt(split[1]);
+                        int seqNum = Integer.parseInt(split[2]);
+
+                        synchronized(this)
+                        {
+                            // if we already have a copy of this link state message, compare the sequence numbers
+                            if(messages.containsKey(senderPort))
+                            { 
+                                String newestMessage = messages.get(senderPort);
+                                int currentSeqNum = Integer.parseInt(newestMessage.split("\\s+")[2]);
+
+                                // store message with the larger sequence number
+                                if(seqNum > currentSeqNum)
+                                    messages.put(senderPort, line);
+                            }
+                            else if(senderPort != portNumber)
+                            {
+                                // if we don't have a copy and its not our own link state message, store it
+                                messages.put(senderPort, line);
+                            }
+                        }
+
+                        // send an ACK back to the sender
                         out.println("ACK\n");
                     }
-                    else if (line.equals("h\n"))
+                    else if (line.equals("h"))
                     {
                         // need to implement link state message history, routing table
+                        // for every link state message recieved, store the time elapsed and link state message
                         out.println("history\n");
                     }
-                    else if (line.equals("s\n"))
+                    else if (line.equals("s"))
                     {
                         System.out.println("Port:" + portNumber + " shutting down...");
                         out.println("STOPPING\n");
@@ -107,17 +134,22 @@ public class MockRouter{
 
 
     Thread RoutingThread = new Thread(new Runnable() {
+        @Override
         public void run()
         {
             int seqNum = 0;//link state msg for sequence number
             int ttl = 60; //link state msg for time to live
             double rand = (3 + Math.random())*1000;
             String message = ""; //link state message of adjacent neighbors
-            for(String rd: adjacents){
+
+            for(String rd: adjacents)
+            {
                 message = message+ " " + rd;
             }
+
             try{
-                while(isRunning){
+                while(isRunning)
+                {
                     //send link state message to all adjacent neighbors
                     for(String rd: adjacents){
                         String split[] = rd.split("-");
@@ -127,8 +159,29 @@ public class MockRouter{
 
                         Socket s = new Socket("localhost", Integer.parseInt(routerPort));
                         PrintStream out = new PrintStream(s.getOutputStream());
-                        out.println("l " + portNumber+ " " + seqNum + " " + ttl  + message); //send linkstate message
+
+                        // send our link state message
+                        out.println("l " + portNumber+ " " + seqNum + " " + ttl  + message);
                         s.close();
+
+                        // forward all link state messages recieved from other routers to adjacent router
+                        for (ConcurrentHashMap.Entry<Integer,String> mapElement : messages.entrySet())
+                        {
+                            String messageToForward = mapElement.getValue();
+                            String senderPort = messageToForward.split("\\s+")[1];
+                                
+                            // only open the connecion and forward the message if the recipient is not the original sender of that message
+                            if(!senderPort.equals(routerPort))
+                            {
+                                s = new Socket("localhost", Integer.parseInt(routerPort));
+                                out = new PrintStream(s.getOutputStream());
+                                out.println(messageToForward);
+                                s.close();   
+                            }
+                        }
+                        
+                        // out.println("l " + portNumber+ " " + seqNum + " " + ttl  + message); //send linkstate message
+                        // s.close();
 
                         Socket s2 = new Socket("localhost", Integer.parseInt(routerPort));
                         out = new PrintStream(s2.getOutputStream());
@@ -139,6 +192,7 @@ public class MockRouter{
                         out.println(routersFound); //send routers discovered message to neighboring routers
                         s2.close();
                     }
+                    // wait for ~3.xxxxx seconds
                     Thread.sleep((long)rand);
                     seqNum++;
                 }
@@ -149,9 +203,8 @@ public class MockRouter{
                     e.printStackTrace();
             }
 
-            }
-        });
-
+        }
+    });
 
 
     public String toString(){
