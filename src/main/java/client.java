@@ -4,28 +4,29 @@ import java.nio.Buffer;
 
 public class client {
     public static void main(String[] args) throws IOException {
-        while(true){
+        while (true) {
 //            System.out.println("Enter the port to connect to:");
             BufferedReader keyboard = new BufferedReader(new InputStreamReader(System.in));
             String command = keyboard.readLine();
             int portNum = 0;
-            if(command.equals("e")){ //Exits program
+            if (command.equals("e")) { //Exits program
                 break;
-            }else if(command.charAt(0) == 'h'){
-               portNum = Integer.parseInt(command.substring(3));
+            } else if (command.charAt(0) == 'h') {
+                portNum = Integer.parseInt(command.substring(3));
             }
 
-            Socket s = new Socket("localhost",portNum);
+            Socket s = new Socket("localhost", portNum);
             System.out.println("connected to server");
 
 //        BufferedReader keyboard = new BufferedReader(new InputStreamReader(System.in));
-            PrintWriter pr = new PrintWriter(s.getOutputStream(),true);
+            PrintWriter pr = new PrintWriter(s.getOutputStream(), true);
             pr.println(command.charAt(0));
 
             InputStreamReader in = new InputStreamReader(s.getInputStream());
             BufferedReader bf = new BufferedReader(in);
             System.out.println("Server: " + bf.readLine());
-            
+
             s.close();
+        }
     }
 }
