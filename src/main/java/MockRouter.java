@@ -2,13 +2,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 
 public class MockRouter{
-    private int portNumber;
-    private String[] adjacents;
+    private final int portNumber;
+    private final String[] adjacents;
     // history
     // routing table 
     
@@ -139,6 +138,7 @@ public class MockRouter{
 //         });
 
     Thread RoutingThread = new Thread(new Runnable() {
+        @Override
         public void run()
         {
             try{
@@ -146,7 +146,7 @@ public class MockRouter{
                     String split[] = rd.split("-");
                     String routerPort = split[0];
                     String distance = split[1];
-                    System.out.println("Port: "+ portNumber + "'s neighbor: " + "Port:"+routerPort + " Distance: " + distance);
+                    System.out.println("Port: " + portNumber + "'s neighbor: " + "Port:" + routerPort + " Distance: " + distance);
                     // System.out.println("Enter the port to connect to:");
                     Socket s = new Socket("localhost", Integer.parseInt(routerPort));
                     PrintStream out = new PrintStream(s.getOutputStream());
