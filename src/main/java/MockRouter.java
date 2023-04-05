@@ -5,13 +5,12 @@ import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class MockRouter{
     private int portNumber;
     private String[] adjacents;
-    private Hashtable<Integer, String> messages;
+    private ConcurrentHashMap<Integer, String> messages;
     private ArrayList<String> history;
     public boolean isRunning = true;
     // history
@@ -22,7 +21,7 @@ public class MockRouter{
     {
         this.portNumber  = portNumber;
         this.adjacents   = adjacents;
-        this.messages    = new Hashtable<>();
+        this.messages    = new ConcurrentHashMap<>();
         System.out.println("Starting thread");
         SocketThread.start();
         RoutingThread.start();
@@ -34,22 +33,21 @@ public class MockRouter{
             try 
             {
                 ServerSocket    server     = new ServerSocket(portNumber);
-
-
                 while(isRunning)
                 {
                     System.out.println("port:" + portNumber + " waiting for request.");
                     Socket              socket  = server.accept();
                     InputStreamReader in = new InputStreamReader(socket.getInputStream());
                     BufferedReader br = new BufferedReader(in);
-                    PrintStream out = new PrintStream(socket.getOutputStream());
                     String line = br.readLine();
+                    PrintStream out = new PrintStream(socket.getOutputStream());
 
                     System.out.println("Port:" + portNumber + " from client(" + socket.getPort()+"): "+ line);
                     out.println("Port(" + portNumber+"): I received " + line);
                     if(line == null)
                     {
                         // do nothing
+                        // we will sometimes get null messages because 
                     }
                     else if(line.charAt(0) == 'l')
                     {
@@ -137,28 +135,27 @@ public class MockRouter{
                         Socket s = new Socket("localhost", Integer.parseInt(routerPort));
                         PrintStream out = new PrintStream(s.getOutputStream());
 
-                        out.println("l " + portNumber+ " " + seqNum + " " + ttl  + message); //send linkstate message
+                        // send our link state message
+                        out.println("l " + portNumber+ " " + seqNum + " " + ttl  + message);
+                        s.close();
 
-                        synchronized(this)
+                        // forward all link state messages recieved from other routers to adjacent router
+                        for (ConcurrentHashMap.Entry<Integer,String> mapElement : messages.entrySet())
                         {
-                            // forward all messages
-                            Enumeration<Integer> enumKeys = messages.keys();
-                            while(enumKeys.hasMoreElements())
+                            String messageToForward = mapElement.getValue();
+                            String senderPort = messageToForward.split("\\s+")[1];
+                                
+                            // only open the connecion and forward the message if the recipient is not the original sender of that message
+                            if(!senderPort.equals(routerPort))
                             {
                                 s = new Socket("localhost", Integer.parseInt(routerPort));
                                 out = new PrintStream(s.getOutputStream());
-                                Integer key = enumKeys.nextElement();
-                                String messageToForward = messages.get(key);
-                                String senderPort = messageToForward.split("\\s+")[1];
-                                
-                                // if the message is one we recieved from the router we're about to send it to, don't send it
-                                if(!senderPort.equals(routerPort))
-                                    out.println(messageToForward);
-
-                                s.close();
+                                out.println(messageToForward);
+                                s.close();   
                             }
                         }
                     }
+                    // wait for ~3.xxxxx seconds
                     Thread.sleep((long)rand);
                     seqNum++;
                 }
