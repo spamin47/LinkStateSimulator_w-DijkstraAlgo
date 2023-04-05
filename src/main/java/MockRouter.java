@@ -87,15 +87,16 @@ public class MockRouter{
     Thread RoutingThread = new Thread(new Runnable() {
         public void run()
         {
-            int seqNum = 0;
-            int ttl = 60;
+            int seqNum = 0;//link state msg for sequence number
+            int ttl = 60; //link state msg for time to live
             double rand = (3 + Math.random())*1000;
-            String message = "";
+            String message = ""; //link state message of adjacent neighbors
             for(String rd: adjacents){
                 message = message+ " " + rd;
             }
             try{
                 while(isRunning){
+                    //send link state message to all adjacent neighbors
                     for(String rd: adjacents){
                         String split[] = rd.split("-");
                         String routerPort = split[0];
@@ -118,40 +119,9 @@ public class MockRouter{
                     e.printStackTrace();
             }
 
-
-//            System.out.println("test");
-//            try {
-//                System.out.println("Enter the port to connect to:");
-//                BufferedReader keyboard = new BufferedReader(new InputStreamReader(System.in));
-//                Socket s = new Socket(portNumber+"",Integer.parseInt(keyboard.readLine()));
-//                PrintWriter pr = new PrintWriter(s.getOutputStream(),true);
-//                pr.println(keyboard.readLine());
-//            } catch (IOException e) {
-//                throw new RuntimeException(e);
-//            }
-
             }
         });
 
-//    @Override
-//    public void run(){
-//        System.out.println("running thread for port:" + portNumber);
-//        try {
-//            ServerSocket ss = new ServerSocket(portNumber);
-//            Socket s = ss.accept();
-//
-//            System.out.println("client connected to server port " + portNumber);
-//
-//            InputStreamReader in = new InputStreamReader(s.getInputStream());
-//            BufferedReader bf = new BufferedReader(in);
-//            String str = bf.readLine();
-//            System.out.println("client("+s.getPort()+"): " + str);
-//
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//
-//    }
 
 
     public String toString(){
