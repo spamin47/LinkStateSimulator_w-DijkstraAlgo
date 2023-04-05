@@ -5,6 +5,8 @@ import java.io.PrintStream;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.TreeSet;
 import java.util.random.*;
 
 public class MockRouter{
@@ -12,12 +14,20 @@ public class MockRouter{
     private String[] adjacents;
     public boolean isRunning = true;
     // history
-    // routing table 
+    // routing table
+    public TreeSet<Integer> routersDiscovered;
+
     
     public MockRouter(int portNumber, String[] adjacents)
     {
         this.portNumber  = portNumber;
         this.adjacents   = adjacents;
+        routersDiscovered = new TreeSet<>(); //For storing newly discovered routers
+        for(String r:adjacents){
+            String[] split = r.split("-");
+            routersDiscovered.add(Integer.parseInt(split[0]));
+        }
+
 
         System.out.println("Starting thread");
         SocketThread.start();
@@ -34,7 +44,7 @@ public class MockRouter{
 
                 while(isRunning)
                 {
-                    System.out.println("port:" + portNumber + " waiting for request.");
+//                    System.out.println("port:" + portNumber + " waiting for request.");
                     Socket              socket  = server.accept();
                     // DataInputStream     in      = new DataInputStream(new BufferedInputStream(sender.getInputStream()));
                     // DataOutputStream    out     = new DataOutputStream(new BufferedOutputStream(sender.getOutputStream()));
@@ -45,7 +55,6 @@ public class MockRouter{
                     String line = br.readLine();
 
                     System.out.println("Port:" + portNumber + " from client(" + socket.getPort()+"): "+line);
-                    out.println("Port(" + portNumber+"): I received " + line);
 
                     if(line.charAt(0) == 'l')
                     {
@@ -61,6 +70,19 @@ public class MockRouter{
                         System.out.println("Port:" + portNumber + " shutting down...");
                         out.println("STOPPING\n");
                         isRunning = false;
+                    }else if(line.equals("table")){
+                        String sendBack = "";
+                        for(int r:routersDiscovered){
+                            System.out.print( r+", ");
+                            sendBack += r + " ";
+                        }
+                        out.println(sendBack);
+                        System.out.println("");
+                    }else if(line.substring(0,2).equals("RD")){
+                        String routersFound[] = line.substring(3).split(" ");
+                        for(String rd:routersFound){
+                            routersDiscovered.add(Integer.parseInt(rd));
+                        }
                     }
 
                     out.close();
@@ -101,13 +123,21 @@ public class MockRouter{
                         String split[] = rd.split("-");
                         String routerPort = split[0];
                         String distance = split[1];
-                        System.out.println("Port: "+ portNumber + "'s neighbor: " + "Port:"+routerPort + " Distance: " + distance);
+//                        System.out.println("Port: "+ portNumber + "'s neighbor: " + "Port:"+routerPort + " Distance: " + distance);
 
                         Socket s = new Socket("localhost", Integer.parseInt(routerPort));
                         PrintStream out = new PrintStream(s.getOutputStream());
                         out.println("l " + portNumber+ " " + seqNum + " " + ttl  + message); //send linkstate message
-
                         s.close();
+
+                        Socket s2 = new Socket("localhost", Integer.parseInt(routerPort));
+                        out = new PrintStream(s2.getOutputStream());
+                        String routersFound = "RD"; //SocketThread can read "RD"
+                        for(int r: routersDiscovered){
+                            routersFound = routersFound + " " + r;
+                        }
+                        out.println(routersFound); //send routers discovered message to neighboring routers
+                        s2.close();
                     }
                     Thread.sleep((long)rand);
                     seqNum++;
