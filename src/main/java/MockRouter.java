@@ -47,7 +47,7 @@ public class MockRouter{
                     if(line == null)
                     {
                         // do nothing
-                        // we will sometimes get null messages because 
+                        // we should never get null messages, but just in case
                     }
                     else if(line.charAt(0) == 'l')
                     {
@@ -57,27 +57,30 @@ public class MockRouter{
 
                         synchronized(this)
                         {
-                            // if the 
+                            // if we already have a copy of this link state message, compare the sequence numbers
                             if(messages.containsKey(senderPort))
                             { 
                                 String newestMessage = messages.get(senderPort);
                                 int currentSeqNum = Integer.parseInt(newestMessage.split("\\s+")[2]);
 
+                                // store message with the larger sequence number
                                 if(seqNum > currentSeqNum)
                                     messages.put(senderPort, line);
                             }
                             else if(senderPort != portNumber)
                             {
+                                // if we don't have a copy and its not our own link state message, store it
                                 messages.put(senderPort, line);
                             }
                         }
 
-                        // send back an ACK to the sender
+                        // send an ACK back to the sender
                         out.println("ACK\n");
                     }
                     else if (line.equals("h"))
                     {
                         // need to implement link state message history, routing table
+                        // for every link state message recieved, store the time elapsed and link state message
                         out.println("history\n");
                     }
                     else if (line.equals("s"))
