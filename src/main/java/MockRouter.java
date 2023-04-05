@@ -4,19 +4,25 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Hashtable;
 
 public class MockRouter{
     private int portNumber;
     private String[] adjacents;
+    private Hashtable<Integer, String> messages;
+    private ArrayList<String> history;
     public boolean isRunning = true;
     // history
+    // messages
     // routing table 
     
     public MockRouter(int portNumber, String[] adjacents)
     {
         this.portNumber  = portNumber;
         this.adjacents   = adjacents;
-
+        this.messages    = new Hashtable<>();
         System.out.println("Starting thread");
         SocketThread.start();
         RoutingThread.start();
@@ -34,27 +40,49 @@ public class MockRouter{
                 {
                     System.out.println("port:" + portNumber + " waiting for request.");
                     Socket              socket  = server.accept();
-                    // DataInputStream     in      = new DataInputStream(new BufferedInputStream(sender.getInputStream()));
-                    // DataOutputStream    out     = new DataOutputStream(new BufferedOutputStream(sender.getOutputStream()));
-                    // String              line    = in.readUTF();
                     InputStreamReader in = new InputStreamReader(socket.getInputStream());
                     BufferedReader br = new BufferedReader(in);
                     PrintStream out = new PrintStream(socket.getOutputStream());
                     String line = br.readLine();
 
-                    System.out.println("Port:" + portNumber + " from client(" + socket.getPort()+"): "+line);
+                    System.out.println("Port:" + portNumber + " from client(" + socket.getPort()+"): "+ line);
                     out.println("Port(" + portNumber+"): I received " + line);
-
-                    if(line.charAt(0) == 'l')
+                    if(line == null)
                     {
+                        // do nothing
+                    }
+                    else if(line.charAt(0) == 'l')
+                    {
+                        String split[] = line.split("\\s+");
+                        int senderPort = Integer.parseInt(split[1]);
+                        int seqNum = Integer.parseInt(split[2]);
+
+                        synchronized(this)
+                        {
+                            // if the 
+                            if(messages.containsKey(senderPort))
+                            { 
+                                String newestMessage = messages.get(senderPort);
+                                int currentSeqNum = Integer.parseInt(newestMessage.split("\\s+")[2]);
+
+                                if(seqNum > currentSeqNum)
+                                    messages.put(senderPort, line);
+                            }
+                            else if(senderPort != portNumber)
+                            {
+                                messages.put(senderPort, line);
+                            }
+                        }
+
+                        // send back an ACK to the sender
                         out.println("ACK\n");
                     }
-                    else if (line.equals("h\n"))
+                    else if (line.equals("h"))
                     {
                         // need to implement link state message history, routing table
                         out.println("history\n");
                     }
-                    else if (line.equals("s\n"))
+                    else if (line.equals("s"))
                     {
                         System.out.println("Port:" + portNumber + " shutting down...");
                         out.println("STOPPING\n");
@@ -108,9 +136,28 @@ public class MockRouter{
 
                         Socket s = new Socket("localhost", Integer.parseInt(routerPort));
                         PrintStream out = new PrintStream(s.getOutputStream());
+
                         out.println("l " + portNumber+ " " + seqNum + " " + ttl  + message); //send linkstate message
 
-                        s.close();
+                        synchronized(this)
+                        {
+                            // forward all messages
+                            Enumeration<Integer> enumKeys = messages.keys();
+                            while(enumKeys.hasMoreElements())
+                            {
+                                s = new Socket("localhost", Integer.parseInt(routerPort));
+                                out = new PrintStream(s.getOutputStream());
+                                Integer key = enumKeys.nextElement();
+                                String messageToForward = messages.get(key);
+                                String senderPort = messageToForward.split("\\s+")[1];
+                                
+                                // if the message is one we recieved from the router we're about to send it to, don't send it
+                                if(!senderPort.equals(routerPort))
+                                    out.println(messageToForward);
+
+                                s.close();
+                            }
+                        }
                     }
                     Thread.sleep((long)rand);
                     seqNum++;
@@ -124,7 +171,6 @@ public class MockRouter{
 
         }
     });
-
 
 
     public String toString(){
