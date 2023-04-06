@@ -51,6 +51,11 @@ public class main {
                 InputStreamReader in = new InputStreamReader(s.getInputStream());
                 BufferedReader bf = new BufferedReader(in);
                 System.out.println("Server: " + bf.readLine());
+                String output = bf.readLine();
+                while(output != null){
+                    System.out.println(output);
+                    output = bf.readLine();
+                }
                 s.close();
             }else if (command.charAt(0) == 't' || command.charAt(0) == 'p') {
                 portNum = Integer.parseInt(command.substring(2));

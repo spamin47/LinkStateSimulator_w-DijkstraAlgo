@@ -55,7 +55,13 @@ public class LinkStateSimulator {
                 //get response from server
                 InputStreamReader in = new InputStreamReader(s.getInputStream());
                 BufferedReader bf = new BufferedReader(in);
+
                 System.out.println("Server: " + bf.readLine());
+                String o = bf.readLine();
+                while(o != null){
+                    System.out.println(o);
+                    o = bf.readLine();
+                }
                 s.close();
             }else if (command.charAt(0) == 't' || command.charAt(0) == 'p') {
                 portNum = Integer.parseInt(command.substring(2));
