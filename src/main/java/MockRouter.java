@@ -162,11 +162,10 @@ public class MockRouter{
                 message = message+ " " + rd;
             }
 
-            try{
-                while(isRunning)
-                {
-                    //send link state message to all adjacent neighbors
-                    for(String rd: adjacents){
+            while(isRunning)
+            {
+                for(String rd: adjacents){
+                    try{
                         String split[] = rd.split("-");
                         String routerPort = split[0];
                         String distance = split[1];
@@ -196,29 +195,39 @@ public class MockRouter{
                                 s.close();   
                             }
                         }
-                        
+
                         // out.println("l " + portNumber+ " " + seqNum + " " + ttl  + message); //send linkstate message
                         // s.close();
 
-                        // Socket s2 = new Socket("localhost", Integer.parseInt(routerPort));
-                        // out = new PrintStream(s2.getOutputStream());
-                        // String routersFound = "RD"; //SocketThread can read "RD"
-                        // for(int r: routersDiscovered){
-                        //     routersFound = routersFound + " " + r;
-                        // }
-                        // out.println(routersFound); //send routers discovered message to neighboring routers
-                        // s2.close();
+//                        Socket s2 = new Socket("localhost", Integer.parseInt(routerPort));
+//                        out = new PrintStream(s2.getOutputStream());
+//                        String routersFound = "RD"; //SocketThread can read "RD"
+//                        for(int r: routersDiscovered){
+//                            routersFound = routersFound + " " + r;
+//                        }
+//                        out.println(routersFound); //send routers discovered message to neighboring routers
+//                        s2.close();
+                    }catch(IOException e){
+                        System.out.println("Cannot connect to router " + rd);
+                        e.printStackTrace();
                     }
-                    // wait for ~3.xxxxx seconds
-                    Thread.sleep((long)rand);
-                    seqNum++;
+
                 }
 
-            }catch(IOException e){
+
+
+                //send link state message to all adjacent neighbors
+
+                // wait for ~3.xxxxx seconds
+                try {
+                    Thread.sleep((long)rand);
+                } catch (InterruptedException e) {
                     e.printStackTrace();
-            }catch(InterruptedException e){
-                    e.printStackTrace();
+                }
+                seqNum++;
             }
+
+
 
         }
     });
