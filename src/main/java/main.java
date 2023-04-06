@@ -5,7 +5,7 @@ import java.util.Scanner;
 public class main {
     public static void main(String[] args){
         // String filename = "D:\\projects\\Java\\LinkStateSimulator\\src\\main\\java\\test_topology_file.txt";
-        String filename = "./test_topology_file.txt";
+        String filename = "src/main/java/test_topology_file.txt";
         ReadFile rf = new ReadFile("src/main/java/test_topology_file.txt");
 //        rf.printFile();
 //        rf.storeRouterPorts();

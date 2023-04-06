@@ -12,7 +12,8 @@ public class client {
             if (command.equals("e")) { //Exits program
                 break;
             } else if (command.charAt(0) == 'h') {
-                portNum = Integer.parseInt(command.substring(3));
+                portNum = Integer.parseInt(command.substring(2));
+                System.out.println(portNum);
             }
 
             Socket s = new Socket("localhost", portNum);
