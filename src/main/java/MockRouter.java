@@ -198,7 +198,6 @@ public class MockRouter{
 
                         // out.println("l " + portNumber+ " " + seqNum + " " + ttl  + message); //send linkstate message
                         // s.close();
-
 //                        Socket s2 = new Socket("localhost", Integer.parseInt(routerPort));
 //                        out = new PrintStream(s2.getOutputStream());
 //                        String routersFound = "RD"; //SocketThread can read "RD"
@@ -213,8 +212,6 @@ public class MockRouter{
                     }
 
                 }
-
-
 
                 //send link state message to all adjacent neighbors
 
