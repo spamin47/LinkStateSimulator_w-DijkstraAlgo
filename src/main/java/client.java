@@ -16,8 +16,12 @@ public class client {
 
             InputStreamReader in = new InputStreamReader(s.getInputStream());
             BufferedReader bf = new BufferedReader(in);
-            System.out.println("Server: " + bf.readLine());
-            
+
+            String line = bf.readLine();
+            System.out.println("Server: " + line);
+            // line = bf.readLine();
+
             s.close();
     }
+}
 }

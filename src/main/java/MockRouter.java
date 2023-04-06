@@ -7,7 +7,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.TreeSet;
-import java.util.random.*;
+// import java.util.random.*;
 
 public class MockRouter{
     private int portNumber;
@@ -22,10 +22,11 @@ public class MockRouter{
     
     public MockRouter(int portNumber, String[] adjacents)
     {
-        this.portNumber  = portNumber;
-        this.adjacents   = adjacents;
-        this.messages    = new ConcurrentHashMap<>();
-        routersDiscovered = new TreeSet<>(); //For storing newly discovered routers
+        this.portNumber     = portNumber;
+        this.adjacents      = adjacents;
+        this.messages       = new ConcurrentHashMap<>();
+        this.history        = new ArrayList<>();
+        routersDiscovered   = new TreeSet<>(); //For storing newly discovered routers
         for(String r:adjacents){
             String[] split = r.split("-");
             routersDiscovered.add(Integer.parseInt(split[0]));
@@ -40,6 +41,8 @@ public class MockRouter{
     Thread SocketThread = new Thread(new Runnable() {
         public void run()
         {
+            long startTime = System.currentTimeMillis();
+
             try 
             {
                 ServerSocket    server     = new ServerSocket(portNumber);
@@ -62,7 +65,7 @@ public class MockRouter{
                     {
                         String split[] = line.split("\\s+");
                         int senderPort = Integer.parseInt(split[1]);
-                        int seqNum = Integer.parseInt(split[2]);
+                        int seqNum = Integer.parseInt(split[3]);
 
                         synchronized(this)
                         {
@@ -70,19 +73,22 @@ public class MockRouter{
                             if(messages.containsKey(senderPort))
                             { 
                                 String newestMessage = messages.get(senderPort);
-                                int currentSeqNum = Integer.parseInt(newestMessage.split("\\s+")[2]);
+                                int currentSeqNum = Integer.parseInt(newestMessage.split("\\s+")[3]);
 
                                 // store message with the larger sequence number
                                 if(seqNum > currentSeqNum)
                                     messages.put(senderPort, line);
                             }
-                            else if(senderPort != portNumber)
+                            else if(senderPort != portNumber) // <-- may be redundant check
                             {
                                 // if we don't have a copy and its not our own link state message, store it
                                 messages.put(senderPort, line);
                             }
                         }
-
+                        // get time elapsed, converted to seconds
+                        long timeElapsed = (System.currentTimeMillis() - startTime)/1000;
+                        history.add("(" + timeElapsed + " sec) : " + line);
+                        // store in history
                         // send an ACK back to the sender
                         out.println("ACK\n");
                     }
@@ -90,14 +96,21 @@ public class MockRouter{
                     {
                         // need to implement link state message history, routing table
                         // for every link state message recieved, store the time elapsed and link state message
-                        out.println("history\n");
+                        out.println("HISTORY");
+                        
+                        for (String s : history) 
+                        {
+                            out.println(s);    
+                        }
                     }
                     else if (line.equals("s"))
                     {
                         System.out.println("Port:" + portNumber + " shutting down...");
-                        out.println("STOPPING\n");
+                        out.println("STOPPING\r\n");
                         isRunning = false;
-                    }else if(line.equals("table")){
+                    }
+                    else if(line.equals("table"))
+                    {
                         String sendBack = "";
                         for(int r:routersDiscovered){
                             System.out.print( r+", ");
@@ -105,7 +118,9 @@ public class MockRouter{
                         }
                         out.println(sendBack);
                         System.out.println("");
-                    }else if(line.substring(0,2).equals("RD")){
+                    }
+                    else if(line.substring(0,2).equals("RD"))
+                    {
                         String routersFound[] = line.substring(3).split(" ");
                         for(String rd:routersFound){
                             routersDiscovered.add(Integer.parseInt(rd));
@@ -160,22 +175,24 @@ public class MockRouter{
                         Socket s = new Socket("localhost", Integer.parseInt(routerPort));
                         PrintStream out = new PrintStream(s.getOutputStream());
 
-                        // send our link state message
-                        out.println("l " + portNumber+ " " + seqNum + " " + ttl  + message);
+                        // send our link state message: l sender originator seqNum TTL adjacent routers
+                        out.println("l " + portNumber + " " + portNumber + " " + seqNum + " " + ttl  + message);
                         s.close();
 
                         // forward all link state messages recieved from other routers to adjacent router
                         for (ConcurrentHashMap.Entry<Integer,String> mapElement : messages.entrySet())
                         {
-                            String messageToForward = mapElement.getValue();
-                            String senderPort = messageToForward.split("\\s+")[1];
-                                
-                            // only open the connecion and forward the message if the recipient is not the original sender of that message
+                            String msgToFwd = mapElement.getValue();
+                            String[] msgSplit = msgToFwd.split("\\s+");
+                            String senderPort = msgSplit[1]; // get source port
+                            msgToFwd = msgSplit[0] + " " + portNumber + " " + msgSplit[2] + " " + msgSplit[3] + " " + msgSplit[4] + " " + msgSplit[5];
+
+                            // only open the connection and forward the message if the recipient is not the previous sender of that message
                             if(!senderPort.equals(routerPort))
                             {
                                 s = new Socket("localhost", Integer.parseInt(routerPort));
                                 out = new PrintStream(s.getOutputStream());
-                                out.println(messageToForward);
+                                out.println(msgToFwd);
                                 s.close();   
                             }
                         }
@@ -183,14 +200,14 @@ public class MockRouter{
                         // out.println("l " + portNumber+ " " + seqNum + " " + ttl  + message); //send linkstate message
                         // s.close();
 
-                        Socket s2 = new Socket("localhost", Integer.parseInt(routerPort));
-                        out = new PrintStream(s2.getOutputStream());
-                        String routersFound = "RD"; //SocketThread can read "RD"
-                        for(int r: routersDiscovered){
-                            routersFound = routersFound + " " + r;
-                        }
-                        out.println(routersFound); //send routers discovered message to neighboring routers
-                        s2.close();
+                        // Socket s2 = new Socket("localhost", Integer.parseInt(routerPort));
+                        // out = new PrintStream(s2.getOutputStream());
+                        // String routersFound = "RD"; //SocketThread can read "RD"
+                        // for(int r: routersDiscovered){
+                        //     routersFound = routersFound + " " + r;
+                        // }
+                        // out.println(routersFound); //send routers discovered message to neighboring routers
+                        // s2.close();
                     }
                     // wait for ~3.xxxxx seconds
                     Thread.sleep((long)rand);
