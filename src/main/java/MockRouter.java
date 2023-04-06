@@ -95,6 +95,10 @@ public class MockRouter{
                             for (String s : history) {
                                 out.println(s);
                             }
+                            out.println("Routing Table:");
+                            for (int r : routingTable) {
+                                out.println(r + " ");
+                            }
                         } else if (line.equals("s")) {
                             System.out.println("Port:" + portNumber + " shutting down...");
                             out.println("STOPPING\r\n");
