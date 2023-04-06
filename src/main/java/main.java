@@ -6,8 +6,18 @@ import java.util.Scanner;
 public class main {
     public static void main(String[] args) throws IOException {
         // String filename = "D:\\projects\\Java\\LinkStateSimulator\\src\\main\\java\\test_topology_file.txt";
+<<<<<<< HEAD
+        String filename = "./test_topology_file.txt";
+        // ReadFile rf = new ReadFile("src/main/java/test_topology_file.txt");
+//        rf.printFile();
+//        rf.storeRouterPorts();
+//        rf.printRouterPortsStored();
+//        rf.createGraph();
+//        rf.printGraph();
+=======
         String filename = "src/main/java/test_topology_file.txt";
         ReadFile rf = new ReadFile("src/main/java/test_topology_file.txt");
+>>>>>>> main
 
         //instantiate
         ArrayList<MockRouter> routers = new ArrayList<>();
