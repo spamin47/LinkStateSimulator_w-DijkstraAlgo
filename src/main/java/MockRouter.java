@@ -17,7 +17,7 @@ public class MockRouter{
     public boolean isRunning = true;
     // history
     // routing table
-    public TreeSet<Integer> routersDiscovered;
+    public TreeSet<Integer> routingTable;
 
     
     public MockRouter(int portNumber, String[] adjacents)
@@ -26,14 +26,10 @@ public class MockRouter{
         this.adjacents      = adjacents;
         this.messages       = new ConcurrentHashMap<>();
         this.history        = new ArrayList<>();
-        routersDiscovered   = new TreeSet<>(); //For storing newly discovered routers
-        for(String r:adjacents){
-            String[] split = r.split("-");
-            routersDiscovered.add(Integer.parseInt(split[0]));
-        }
+        routingTable   = new TreeSet<>(); //For storing newly discovered routers
+        routingTable.add(portNumber);
 
-
-        System.out.println("Starting thread");
+        System.out.println("Initiating");
         SocketThread.start();
         RoutingThread.start();
     }   
@@ -55,76 +51,73 @@ public class MockRouter{
                     String line = br.readLine();
                     PrintStream out = new PrintStream(socket.getOutputStream());
 
-                    System.out.println("Port:" + portNumber + " from client(" + socket.getPort()+"): "+ line);
-                    if(line == null)
-                    {
-                        // do nothing
-                        // we should never get null messages, but just in case
-                    }
-                    else if(line.charAt(0) == 'l')
-                    {
-                        String split[] = line.split("\\s+");
-                        int senderPort = Integer.parseInt(split[1]);
-                        int seqNum = Integer.parseInt(split[3]);
+//                    System.out.println("Port:" + portNumber + " from client(" + socket.getPort()+"): "+ line);
+                    try {
 
-                        synchronized(this)
-                        {
-                            // if we already have a copy of this link state message, compare the sequence numbers
-                            if(messages.containsKey(senderPort))
-                            { 
-                                String newestMessage = messages.get(senderPort);
-                                int currentSeqNum = Integer.parseInt(newestMessage.split("\\s+")[3]);
 
-                                // store message with the larger sequence number
-                                if(seqNum > currentSeqNum)
+                        if (line == null) {
+                            // do nothing
+                            // we should never get null messages, but just in case
+                        } else if (line.charAt(0) == 'l') {
+                            String split[] = line.split("\\s+");
+                            int senderPort = Integer.parseInt(split[1]);
+                            int seqNum = Integer.parseInt(split[3]);
+
+                            synchronized (this) {
+                                //update routing table
+                                routingTable.add(Integer.parseInt(split[2]));
+
+                                // if we already have a copy of this link state message, compare the sequence numbers
+                                if (messages.containsKey(senderPort)) {
+                                    String newestMessage = messages.get(senderPort);
+                                    int currentSeqNum = Integer.parseInt(newestMessage.split("\\s+")[3]);
+
+                                    // store message with the larger sequence number
+                                    if (seqNum > currentSeqNum)
+                                        messages.put(senderPort, line);
+                                } else if (senderPort != portNumber) // <-- may be redundant check
+                                {
+                                    // if we don't have a copy and its not our own link state message, store it
                                     messages.put(senderPort, line);
+                                }
                             }
-                            else if(senderPort != portNumber) // <-- may be redundant check
-                            {
-                                // if we don't have a copy and its not our own link state message, store it
-                                messages.put(senderPort, line);
+                            // get time elapsed, converted to seconds
+                            long timeElapsed = (System.currentTimeMillis() - startTime) / 1000;
+                            history.add("(" + timeElapsed + " sec) : " + line);
+                            // store in history
+                            // send an ACK back to the sender
+                            out.println("ACK\n");
+                        } else if (line.equals("h")) {
+                            // need to implement link state message history, routing table
+                            // for every link state message recieved, store the time elapsed and link state message
+                            out.println("HISTORY");
+
+                            for (String s : history) {
+                                out.println(s);
                             }
-                        }
-                        // get time elapsed, converted to seconds
-                        long timeElapsed = (System.currentTimeMillis() - startTime)/1000;
-                        history.add("(" + timeElapsed + " sec) : " + line);
-                        // store in history
-                        // send an ACK back to the sender
-                        out.println("ACK\n");
-                    }
-                    else if (line.equals("h"))
-                    {
-                        // need to implement link state message history, routing table
-                        // for every link state message recieved, store the time elapsed and link state message
-                        out.println("HISTORY");
-                        
-                        for (String s : history) 
+                        } else if (line.equals("s")) {
+                            System.out.println("Port:" + portNumber + " shutting down...");
+                            out.println("STOPPING\r\n");
+                            isRunning = false;
+                        } else if (line.equals("t")) //return routing table
                         {
-                            out.println(s);    
+                            String sendBack = "";
+                            for (int r : routingTable) {
+                                sendBack += r + " ";
+                            }
+                            out.println(sendBack);
+                        } else if (line.equals("p")) {
+                            String sendBack = "Local Port: " + server.getLocalPort() +
+                                    ", InetAddress: " + server.getInetAddress() +
+                                    ", LocalSocketAddress: " + server.getLocalSocketAddress() +
+                                    ", Channel: " + server.getChannel() +
+                                    ", " + server.toString();
+                            out.println(sendBack);
                         }
-                    }
-                    else if (line.equals("s"))
-                    {
-                        System.out.println("Port:" + portNumber + " shutting down...");
-                        out.println("STOPPING\r\n");
-                        isRunning = false;
-                    }
-                    else if(line.equals("table"))
-                    {
-                        String sendBack = "";
-                        for(int r:routersDiscovered){
-                            System.out.print( r+", ");
-                            sendBack += r + " ";
-                        }
-                        out.println(sendBack);
-                        System.out.println("");
-                    }
-                    else if(line.substring(0,2).equals("RD"))
-                    {
-                        String routersFound[] = line.substring(3).split(" ");
-                        for(String rd:routersFound){
-                            routersDiscovered.add(Integer.parseInt(rd));
-                        }
+                    }catch(IndexOutOfBoundsException e){ //handles any random packets that can cause out of bound exception error
+                        e.printStackTrace();
+                    }catch(NumberFormatException e){
+                        e.printStackTrace();
                     }
 
                     out.close();
